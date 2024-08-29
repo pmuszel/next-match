@@ -19,7 +19,6 @@ export default async function MemberPhotosPage({params}: {params: {userId: strin
                 <div key={p.id}>
                     <Image 
                     width={300}
-
                     src={p.url}
                     alt='Image of member'
                     className="object-cover aspect-square"
