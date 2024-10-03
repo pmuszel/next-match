@@ -2,10 +2,7 @@
 
 import { MessageDTO } from "@/types";
 import {
-    Avatar,
-    Button,
     Card,
-  getKeyValue,
   Table,
   TableBody,
   TableCell,
@@ -13,100 +10,23 @@ import {
   TableHeader,
   TableRow,
 } from "@nextui-org/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import React, { Key, useCallback, useState } from "react";
-import { AiFillDelete } from "react-icons/ai";
-import { deleteMessage } from "../actions/messageActions";
-import { truncateString } from "@/lib/util";
+import React, {  } from "react";
+import MessageTableCell from "./MessageTableCell";
+import { useMessages } from "@/hooks/useMessages";
 
 type Props = {
-  messages: MessageDTO[];
+  initialMessages: MessageDTO[];
 };
 
-export default function MessageTable({ messages }: Props) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isOutbox = searchParams.get("container") === "outbox";
-
-  const [isDeleting, setIsDeleting] = useState({
-    id: '', 
-    loading: false
-  });
-
-  const columns = [
-    {
-      key: isOutbox ? "recipientName" : "senderName",
-      label: isOutbox ? "Recipient" : "Sender",
-    },
-    { key: "text", label: "Message" },
-    { key: "created", label: isOutbox ? "Date sent" : "Date received" },
-    { key: "actions", label: 'Actions' },
-  ];
-
-  const handleDeleteMessage = useCallback(async (message: MessageDTO) => {
-    setIsDeleting({
-      id: message.id,
-      loading: true
-    });
-
-    await deleteMessage(message.id, isOutbox);
-
-    router.refresh();
-
-    setIsDeleting({
-      id: '', 
-      loading: false
-    })
-  }, [isOutbox, router]);
-
-  const handleRowSelect = (key: Key) => {
-    const message = messages.find((m) => m.id === key);
-    const url = isOutbox
-      ? `/members/${message?.recipientId}`
-      : `/members/${message?.senderId}`;
-    router.push(url + "/chat");
-  };
-
-  const renderCell = useCallback((item: MessageDTO, columnKey: keyof MessageDTO) => {
-    const cellValue = item[columnKey];
-
-    switch (columnKey) {
-        case 'recipientName':
-        case 'senderName':
-            return (
-                <div className='flex items-center gap-2 cursor-pointer'>
-                    <Avatar 
-                        alt='Image of member'
-                        src={(isOutbox ? item.recipientImage : item.senderImage) || '/images/user.png'}
-                    />
-                    <span>{cellValue}</span>
-                </div>
-            )    
-
-            case 'text':
-                return (
-                    <div>
-                      {truncateString(cellValue)}
-                      </div>
-                )
-    
-                case 'created':
-                    return cellValue;
-        default:
-            return (
-                <Button isIconOnly variant="light" onClick={() => handleDeleteMessage(item)} isLoading={isDeleting.id === item.id && isDeleting.loading}>
-                    <AiFillDelete size={24} className="text-danger"/>
-                </Button>
-            );
-    }
-  }, [isOutbox, isDeleting.id, isDeleting.loading, handleDeleteMessage]);
+export default function MessageTable({ initialMessages }: Props) {
+  const {columns, deleteMessage, isDeleting, isOutbox, selectRow, messages} = useMessages(initialMessages);
 
   return (
     <Card className="flex flex-col gap-3 h-[80vh] overflow-auto">
       <Table
         aria-label="Table with messages"
         selectionMode="single"
-        onRowAction={(key) => handleRowSelect(key)}
+        onRowAction={(key) => selectRow(key)}
         shadow="none"
       >
         <TableHeader columns={columns}>
@@ -125,7 +45,7 @@ export default function MessageTable({ messages }: Props) {
               {(columnKey) => (
                 <TableCell className={`${!item.dateRead && !isOutbox ? 'font-semibold' : ''}`}>
 
-                    {renderCell(item, columnKey as keyof MessageDTO)}
+                    <MessageTableCell item={item} columnKey={columnKey as string} isOutbox={isOutbox} deleteMessage={deleteMessage} isDeleting={isDeleting.loading && isDeleting.id === item.id}/>
                     {/* <div className={`${!item.dateRead && !isOutbox ? 'font-semibold' : ''}`}>
                         {getKeyValue(item, columnKey)}
                     </div> */}

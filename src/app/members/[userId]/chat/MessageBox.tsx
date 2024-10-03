@@ -1,6 +1,7 @@
 'use client';
 
-import { transformImageUrl } from '@/lib/util';
+import PresenceAvatar from '@/components/PresenceAvatar';
+import { timeAgo, transformImageUrl } from '@/lib/util';
 import { MessageDTO } from '@/types';
 import { Avatar } from '@nextui-org/react';
 import clsx from 'clsx';
@@ -20,11 +21,13 @@ export default function MessageBox({message, currentUserId}:Props) {
     }, [messageEndRef])
 
     const renderAvatar = () => {
-        return <Avatar 
-            name={message.senderName}
-            className='self-end'
-            src={transformImageUrl(message.senderImage) || '/images/user.png'}
-        />
+        return <div className="self-end">
+            <PresenceAvatar 
+                userId={message.senderId}
+                src={transformImageUrl(message.senderImage) || '/images/user.png'}
+            />
+        </div>
+        
     }
 
     const messageContentClasses = clsx(
@@ -36,18 +39,18 @@ export default function MessageBox({message, currentUserId}:Props) {
     )
 
     const renderMessageHeader = () => {
-        return <div className={clsx('flex items-center w-full', {
+        return <><div className={clsx('flex items-center w-full', {
             'justify-between': isCurrentUserSender
         })}>
             {message.dateRead && message.recipientId !== currentUserId ? (
-                <span className="text-xs text-black text-italic">(Read 4 mins ago)</span>
+                <span className="text-xs text-black text-italic">(Read {timeAgo(message.dateRead)})</span>
             ) : (<div></div>)}
             <div className="flex">
                 <span className="text-sm font-semibold text-gray-900">{message.senderName}</span>
                 <span className="text-sm text-gray-500 ml-2">{message.created}</span>
             </div>
-            <div ref={messageEndRef}/>
         </div>
+            <div ref={messageEndRef}/></>
     }
 
     const renderMessageContent = () => {
